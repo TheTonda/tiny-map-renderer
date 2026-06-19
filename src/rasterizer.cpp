@@ -36,6 +36,61 @@ void draw_line(Image& img, int x0, int y0, int x1, int y1, uint8_t r, uint8_t g,
     draw_line(img, x0, y0, x1, y1, color);
 }
 
+void fill_disk(Image& img, int cx, int cy, int radius, uint32_t color) {
+    for (int y = cy - radius; y <= cy + radius; ++y) {
+        for (int x = cx - radius; x <= cx + radius; ++x) {
+            int dx = x - cx;
+            int dy = y - cy;
+            if (dx * dx + dy * dy <= radius * radius) {
+                img.set_pixel(x, y, color);
+            }
+        }
+    }
+}
+
+void draw_line_thick(Image& img, int x0, int y0, int x1, int y1, uint32_t color, int thickness) {
+    if (thickness <= 1) {
+        draw_line(img, x0, y0, x1, y1, color);
+        return;
+    }
+    int radius = thickness / 2;
+    int dx = std::abs(x1 - x0);
+    int dy = std::abs(y1 - y0);
+    int sx = (x0 < x1) ? 1 : -1;
+    int sy = (y0 < y1) ? 1 : -1;
+    int err = dx - dy;
+
+    while (true) {
+        fill_disk(img, x0, y0, radius, color);
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 > -dy) {
+            err -= dy;
+            x0 += sx;
+        }
+        if (e2 < dx) {
+            err += dx;
+            y0 += sy;
+        }
+    }
+}
+
+void draw_polyline(Image& img, const std::vector<std::pair<int,int>>& points, uint32_t color, int thickness) {
+    if (points.empty()) return;
+    int radius = thickness / 2;
+    if (points.size() == 1) {
+        fill_disk(img, points[0].first, points[0].second, radius, color);
+        return;
+    }
+    for (size_t i = 0; i < points.size() - 1; ++i) {
+        draw_line_thick(img, points[i].first, points[i].second,
+                        points[i + 1].first, points[i + 1].second, color, thickness);
+    }
+    for (size_t i = 0; i < points.size(); ++i) {
+        fill_disk(img, points[i].first, points[i].second, radius, color);
+    }
+}
+
 void fill_polygon(Image& img, const std::vector<std::pair<int,int>>& points, uint32_t color) {
     if (points.size() < 3) return;
 
