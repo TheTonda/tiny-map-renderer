@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++23 -O2 -Wall -Wextra -Isrc
 
-all: test_image test_tile_math test_rasterizer test_polyfill test_thick_line test_clip test_osm_model test_osm_parser test_style
+all: test_image test_tile_math test_rasterizer test_polyfill test_thick_line test_clip test_osm_model test_osm_parser test_style test_renderer
 
 test_image: tests/test_image.cpp src/image.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^
@@ -30,5 +30,8 @@ test_osm_parser: tests/test_osm_parser.cpp src/osm_parser.cpp
 test_style: tests/test_style.cpp src/style.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
+test_renderer: tests/test_renderer.cpp src/renderer.cpp src/image.cpp src/rasterizer.cpp src/style.cpp src/clip.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
 clean:
-	rm -f test_image test_tile_math test_rasterizer test_polyfill test_thick_line test_clip test_osm_model test_osm_parser test_style *.o
+	rm -f test_image test_tile_math test_rasterizer test_polyfill test_thick_line test_clip test_osm_model test_osm_parser test_style test_renderer *.o
