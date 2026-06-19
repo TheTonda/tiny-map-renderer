@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version="0.6" generator="test">
+  <bounds minlat="48.855" minlon="2.290" maxlat="48.860" maxlon="2.300"/>
+  <node id="1" lat="48.8550" lon="2.2900"/>
+  <node id="2" lat="48.8560" lon="2.2925"/>
+  <node id="3" lat="48.8570" lon="2.2950"/>
+  <node id="4" lat="48.8580" lon="2.2975"/>
+  <node id="5" lat="48.8590" lon="2.3000"/>
+  <way id="100">
+    <nd ref="1"/>
+    <nd ref="2"/>
+    <nd ref="3"/>
+    <nd ref="4"/>
+    <nd ref="5"/>
+    <tag k="highway" v="residential"/>
+    <tag k="name" v="Test Road"/>
+  </way>
+</osm>
