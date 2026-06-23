@@ -283,20 +283,22 @@ bool write_osm_binary_v2(const OSMData& data, const std::string& path) {
         const auto& s = compiled_ways[wi].style;
         uint8_t idx = 0;
         for (; idx < style_palette.size(); ++idx) {
-            if (style_palette[idx].color == s.color &&
-                style_palette[idx].casing_color == s.casing_color &&
-                style_palette[idx].width == s.width &&
-                style_palette[idx].casing_width == s.casing_width &&
-                style_palette[idx].fill == s.fill &&
-                style_palette[idx].z_order == s.z_order) break;
+        if (style_palette[idx].color == s.color &&
+            style_palette[idx].casing_color == s.casing_color &&
+            style_palette[idx].width == s.width &&
+            style_palette[idx].casing_width == s.casing_width &&
+            style_palette[idx].fill == s.fill &&
+            style_palette[idx].z_order == s.z_order &&
+            style_palette[idx].dash_on == s.dash_on &&
+            style_palette[idx].dash_off == s.dash_off) break;
         }
         if (idx == style_palette.size()) style_palette.push_back(s);
         way_style_idx[wi] = idx;
     }
 
-    // --- Write v2 binary (version 3: adds casing support to Style) ---
+    // --- Write v2 binary (version 4: adds dash_on/dash_off to Style) ---
     std::fwrite("TMR2", 4, 1, f);
-    w32(f, 3); // version
+    w32(f, 4); // version
 
     // Header
     w32(f, REF_ZOOM);
@@ -314,7 +316,7 @@ bool write_osm_binary_v2(const OSMData& data, const std::string& path) {
         wi32(f, pn.wy);
     }
 
-    // Style palette (v3: includes casing fields)
+    // Style palette (v4: includes dash fields)
     uint8_t psize = static_cast<uint8_t>(style_palette.size());
     w8(f, psize);
     for (const auto& s : style_palette) {
@@ -324,6 +326,8 @@ bool write_osm_binary_v2(const OSMData& data, const std::string& path) {
         w8(f, static_cast<uint8_t>(s.casing_width));
         w8(f, s.fill ? 1 : 0);
         w8(f, static_cast<uint8_t>(s.z_order));
+        w8(f, s.dash_on);
+        w8(f, s.dash_off);
     }
 
     // Way section
@@ -400,7 +404,7 @@ RenderData read_render_data(const std::string& path) {
     }
     p += 4;
     uint32_t file_ver = r32(p);
-    if (file_ver < 2 || file_ver > 3) {
+    if (file_ver < 2 || file_ver > 4) {
         munmap(const_cast<uint8_t*>(map), size);
         return rd;
     }
@@ -422,7 +426,7 @@ RenderData read_render_data(const std::string& path) {
         rd.nodes[i].wy = ri32(p);
     }
 
-    // Style palette (v2: 7 bytes, v3: 11 bytes)
+    // Style palette (v2:7B, v3:11B, v4:13B)
     uint8_t style_count = r8(p);
     std::vector<Style> styles(style_count);
     for (uint8_t i = 0; i < style_count; ++i) {
@@ -438,6 +442,10 @@ RenderData read_render_data(const std::string& path) {
         }
         styles[i].fill = r8(p) != 0;
         styles[i].z_order = r8(p);
+        if (file_ver >= 4) {
+            styles[i].dash_on = r8(p);
+            styles[i].dash_off = r8(p);
+        }
     }
 
     // Ways

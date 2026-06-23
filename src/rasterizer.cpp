@@ -30,6 +30,71 @@ void draw_line(Image& img, int x0, int y0, int x1, int y1, uint8_t r, uint8_t g,
     draw_line(img, x0, y0, x1, y1, color);
 }
 
+void draw_line_dashed(Image& img, int x0, int y0, int x1, int y1,
+                      uint32_t color, int thickness, int dash_on, int dash_off)
+{
+    if (dash_on <= 0 || dash_off <= 0) {
+        draw_line_thick(img, x0, y0, x1, y1, color, thickness);
+        return;
+    }
+
+    int dx = std::abs(x1 - x0);
+    int dy = std::abs(y1 - y0);
+    int sx = (x0 < x1) ? 1 : -1;
+    int sy = (y0 < y1) ? 1 : -1;
+    int err = dx - dy;
+    int period = dash_on + dash_off;
+    int step = 0;
+
+    // For thick dashed lines: track dash segments, render each as a thick line
+    if (thickness > 1) {
+        int seg_x0 = x0, seg_y0 = y0;
+        int seg_step_start = 0;
+        bool in_dash = true;
+
+        auto flush_segment = [&](int cur_x, int cur_y, int cur_step) {
+            int seg_len = cur_step - seg_step_start;
+            if (in_dash && seg_len > 0) {
+                draw_line_thick(img, seg_x0, seg_y0, cur_x, cur_y, color, thickness);
+            }
+            seg_x0 = cur_x;
+            seg_y0 = cur_y;
+            seg_step_start = cur_step;
+            in_dash = !in_dash;
+        };
+
+        // Walk the line point by point
+        int cx = x0, cy = y0;
+        while (!(cx == x1 && cy == y1)) {
+            int e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; cx += sx; }
+            if (e2 < dx)  { err += dx; cy += sy; }
+            step++;
+            int phase = step % period;
+            bool now_drawing = (phase < dash_on);
+            if (now_drawing != in_dash) {
+                flush_segment(cx, cy, step);
+            }
+            if (cx == x1 && cy == y1) break;
+        }
+        // Flush final segment
+        flush_segment(x1, y1, step + 1);
+        return;
+    }
+
+    // Thin dashed line: per-pixel Bresenham with dash pattern
+    while (true) {
+        if (step % period < dash_on) {
+            img.set_pixel(x0, y0, color);
+        }
+        step++;
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x0 += sx; }
+        if (e2 < dx)  { err += dx; y0 += sy; }
+    }
+}
+
 void fill_disk(Image& img, int cx, int cy, int radius, uint32_t color) {
     int r2 = radius * radius;
     for (int y = cy - radius; y <= cy + radius; ++y) {

@@ -159,7 +159,7 @@ StyleEngine::StyleEngine() {
     // ============================================================
     // z_order 26: Boundaries (topmost)
     // ============================================================
-    rules.push_back({"boundary", "administrative", {0x9C429CFF, 0, 1, 0, false, 26}});
+    rules.push_back({"boundary", "administrative", {0x9C429CFF, 0, 1, 0, false, 26, 10, 6}});
 }
 
 std::optional<Style> StyleEngine::style_for_way(

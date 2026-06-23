@@ -75,6 +75,15 @@ Image Renderer::render(const Viewport& vp) const {
     for (const auto& entry : visible_ways) {
         if (entry.style.fill) {
             raster::fill_polygon(img, entry.pixels, entry.style.color);
+        } else if (entry.style.dash_on > 0) {
+            for (size_t i = 0; i + 1 < entry.pixels.size(); ++i) {
+                int x0 = entry.pixels[i].first, y0 = entry.pixels[i].second;
+                int x1 = entry.pixels[i + 1].first, y1 = entry.pixels[i + 1].second;
+                if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, 0, 0, vp.width, vp.height)) {
+                    raster::draw_line_dashed(img, x0, y0, x1, y1,
+                        entry.style.color, entry.style.width, entry.style.dash_on, entry.style.dash_off);
+                }
+            }
         } else {
             bool has_casing = entry.style.casing_width > 0;
             for (size_t i = 0; i + 1 < entry.pixels.size(); ++i) {
@@ -182,6 +191,16 @@ Image render_v2(const RenderData& rd, double center_lat, double center_lon,
             // tile boundaries with no vertex inside (common at max zoom).
             if (rw.style.fill) {
                 raster::fill_polygon(img, pixels, rw.style.color);
+            } else if (rw.style.dash_on > 0) {
+                // Dashed line (boundaries, etc.)
+                for (size_t i = 0; i + 1 < pixels.size(); ++i) {
+                    int x0 = pixels[i].first, y0 = pixels[i].second;
+                    int x1 = pixels[i + 1].first, y1 = pixels[i + 1].second;
+                    if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, 0, 0, width, height)) {
+                        raster::draw_line_dashed(img, x0, y0, x1, y1,
+                            rw.style.color, rw.style.width, rw.style.dash_on, rw.style.dash_off);
+                    }
+                }
             } else {
                 // Draw casing first (if present)
                 bool has_casing = rw.style.casing_width > 0;

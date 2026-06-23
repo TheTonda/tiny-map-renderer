@@ -7,11 +7,13 @@
 
 struct Style {
     uint32_t color;
-    uint32_t casing_color = 0;  // 0 = no casing
+    uint32_t casing_color = 0;
     int width;
-    int casing_width = 0;       // extra width behind the line (draw casing first)
+    int casing_width = 0;
     bool fill;
     int z_order;
+    uint8_t dash_on = 0;   // 0 = solid line; >0 = dashed (pixels on)
+    uint8_t dash_off = 0;  // pixels off between dashes
 };
 
 class StyleEngine {
