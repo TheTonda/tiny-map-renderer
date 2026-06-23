@@ -23,7 +23,7 @@ int main() {
         check(style.has_value(), "highway=primary -> has style");
         check(style->color == 0xFDBF6FFF, "highway=primary -> color");
         check(style->casing_color == 0xD99B5EFF, "highway=primary -> casing_color");
-        check(style->width == 4, "highway=primary -> width=4");
+        check(style->width == 5, "highway=primary -> width=5");
         check(style->casing_width == 2, "highway=primary -> casing_width=2");
         check(style->fill == false, "highway=primary -> fill=false");
         check(style->z_order == 17, "highway=primary -> z_order=17");
@@ -61,7 +61,7 @@ int main() {
         std::unordered_map<std::string, std::string> tags = {{"waterway", "stream"}};
         auto style = engine.style_for_way(tags);
         check(style.has_value(), "waterway=stream -> has style");
-        check(style->color == 0xB1CFECFF, "waterway=stream -> color=0xB1CFECFF");
+        check(style->color == 0xB5D0D0FF, "waterway=stream -> color=0xB5D0D0FF");
         check(style->width == 1, "waterway=stream -> width=1");
     }
 
