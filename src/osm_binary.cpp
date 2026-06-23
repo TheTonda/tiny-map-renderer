@@ -193,8 +193,8 @@ bool write_osm_binary_v2(const OSMData& data, const std::string& path) {
 
     for (const auto& [id, node] : data.nodes) {
         node_id_to_idx[id] = static_cast<uint32_t>(proj_nodes.size());
-        int64_t wx = static_cast<int64_t>(TileMath::lon_to_world_px(node.lon, REF_ZOOM));
-        int64_t wy = static_cast<int64_t>(TileMath::lat_to_world_py(node.lat, REF_ZOOM));
+        int32_t wx = static_cast<int32_t>(TileMath::lon_to_world_px(node.lon, REF_ZOOM));
+        int32_t wy = static_cast<int32_t>(TileMath::lat_to_world_py(node.lat, REF_ZOOM));
         proj_nodes.push_back({wx, wy});
     }
 
@@ -228,15 +228,15 @@ bool write_osm_binary_v2(const OSMData& data, const std::string& path) {
         cw.style = *s;
         cw.node_indices.reserve(way.node_refs.size());
 
-        int64_t min_wx = INT64_MAX, min_wy = INT64_MAX;
-        int64_t max_wx = INT64_MIN, max_wy = INT64_MIN;
+        int32_t min_wx = INT32_MAX, min_wy = INT32_MAX;
+        int32_t max_wx = INT32_MIN, max_wy = INT32_MIN;
         for (auto ref : way.node_refs) {
             auto it = node_id_to_idx.find(ref);
             if (it == node_id_to_idx.end()) continue;
             uint32_t idx = it->second;
             cw.node_indices.push_back(idx);
-            int64_t wx = proj_nodes[idx].wx;
-            int64_t wy = proj_nodes[idx].wy;
+            int32_t wx = proj_nodes[idx].wx;
+            int32_t wy = proj_nodes[idx].wy;
             if (wx < min_wx) min_wx = wx;
             if (wx > max_wx) max_wx = wx;
             if (wy < min_wy) min_wy = wy;
@@ -305,11 +305,11 @@ bool write_osm_binary_v2(const OSMData& data, const std::string& path) {
     wf64(f, cell_w);
     wf64(f, cell_h);
 
-    // Node section
+    // Node section (stored as i32 — fits world-pixels at z≤20)
     w64(f, proj_nodes.size());
     for (const auto& pn : proj_nodes) {
-        wi64(f, pn.wx);
-        wi64(f, pn.wy);
+        wi32(f, pn.wx);
+        wi32(f, pn.wy);
     }
 
     // Style palette
@@ -409,12 +409,12 @@ RenderData read_render_data(const std::string& path) {
     rd.grid_cell_w = rf64(p);
     rd.grid_cell_h = rf64(p);
 
-    // Nodes
+    // Nodes (stored as i32 at ref_zoom ≤ 20)
     uint64_t node_count = r64(p);
     rd.nodes.resize(node_count);
     for (uint64_t i = 0; i < node_count; ++i) {
-        rd.nodes[i].wx = ri64(p);
-        rd.nodes[i].wy = ri64(p);
+        rd.nodes[i].wx = ri32(p);
+        rd.nodes[i].wy = ri32(p);
     }
 
     // Style palette

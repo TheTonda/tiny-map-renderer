@@ -14,6 +14,10 @@ A from-scratch software map renderer in C++23 with no external graphics librarie
 
 Pipeline: OSM XML → osm_parser → OSMData → Renderer (projection + clip + style + rasterize) → Image → PPM/TTL
 
+Two rendering paths:
+- **v1 (compat)**: OSMData → Renderer::render() — trig per node, full way iteration, ~2s
+- **v2 (fast)**: RenderData → render_v2() — pre-projected, grid-indexed, zero-trig, ~0.04s
+
 ```
 src/
   image.{h,cpp}        — Pixel buffer, RGBA packed as uint32_t, PPM export (P6 binary, buffered write), set_pixel_unsafe
@@ -22,13 +26,15 @@ src/
   clip.{h,cpp}          — Cohen-Sutherland line clipping (double and int overloads)
   osm_model.h           — Node/Way/Relation/OSMData (header-only, methods inline)
   osm_parser.{h,cpp}    — mmap-based XML parser, hand-rolled memchr attribute scanner, from_chars numbers
-  osm_binary.{h,cpp}    — Compact binary format (.tmr): ~6× smaller than XML, mmap-loaded, ~2× faster parse
+  osm_binary.{h,cpp}    — Compact binary format: v1 (~6× smaller) and v2 (~9.5× smaller, pre-projected, grid-indexed)
   tile_format.{h,cpp}   — Palette + RLE tile output (.ttl): ~10× smaller than PPM
+  render_data.h         — Compact pre-processed structures: ProjNode, RenderWay, spatial grid, render_v2()
   style.{h,cpp}         — StyleEngine maps OSM tags → color/width/fill/z_order
-  renderer.{h,cpp}      — Renderer: single-pass projection + culling, stable_sort by z_order, clipping + rasterization
+  renderer.{h,cpp}      — Renderer (v1) + render_v2() (v2): zero-trig, grid-filtered, z-order bucketed
   main.cpp              — CLI: ./tiny-map <file.osm|file.tmr> <lat> <lon> <zoom> <w> <h> <out.ppm|out.ttl>
-                         — CLI: ./tiny-map --compile <file.osm>  (produces .tmr)
-  interactive.cpp       — SDL2 interactive viewer: ./map-viewer <osm-file> [lat] [lon] [zoom]
+                         — CLI: ./tiny-map --compile <file.osm>     (produces v1 .tmr)
+                         — CLI: ./tiny-map --compile-v2 <file.osm>  (produces v2 .tmr)
+  interactive.cpp       — SDL2 viewer with tile cache (256×256 tiles, LRU, 60fps panning)
 ```
 
 ## Key conventions

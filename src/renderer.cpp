@@ -160,9 +160,9 @@ Image render_v2(const RenderData& rd, double center_lat, double center_lon,
                 uint32_t node_idx = rd.way_refs[rw.refs_offset + j];
                 if (node_idx >= rd.nodes.size()) continue;
 
-                // Subtract at full precision, then scale to target zoom
-                double dx = static_cast<double>(rd.nodes[node_idx].wx - cx_ref) * scale;
-                double dy = static_cast<double>(rd.nodes[node_idx].wy - cy_ref) * scale;
+                // Cast to i64 before subtraction to avoid overflow in i32 subtraction
+                double dx = static_cast<double>(static_cast<int64_t>(rd.nodes[node_idx].wx) - cx_ref) * scale;
+                double dy = static_cast<double>(static_cast<int64_t>(rd.nodes[node_idx].wy) - cy_ref) * scale;
                 int ix = static_cast<int>(dx + half_w);
                 int iy = static_cast<int>(dy + half_h);
                 pixels.push_back({ix, iy});

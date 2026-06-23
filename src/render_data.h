@@ -10,11 +10,11 @@
 
 struct RenderData {
     // Pre-projected world-pixel coordinates at reference_zoom.
-    // Indexed by node index (0..N-1). During rendering, project to target zoom
-    // via simple shift: pixel = (wx >> (ref_zoom - target_zoom)).
+    // Indexed by node index (0..N-1). At zoom 20, world-pixels fit in i32 (max ~268M).
+    // During rendering, project via: pixel = ((wx - cx) >> shift) + half_w.
     struct ProjNode {
-        int64_t wx;  // world pixel X at reference_zoom
-        int64_t wy;  // world pixel Y at reference_zoom
+        int32_t wx;  // world pixel X at reference_zoom (fits in i32 at z≤20)
+        int32_t wy;  // world pixel Y at reference_zoom
     };
     std::vector<ProjNode> nodes;
 
