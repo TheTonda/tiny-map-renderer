@@ -163,7 +163,6 @@ Image render_v2(const RenderData& rd, double center_lat, double center_lon,
             std::vector<std::pair<int,int>> pixels;
             pixels.reserve(rw.refs_count);
 
-            bool any_visible = false;
             for (uint16_t j = 0; j < rw.refs_count; ++j) {
                 uint32_t node_idx = rd.way_refs[rw.refs_offset + j];
                 if (node_idx >= rd.nodes.size()) continue;
@@ -174,13 +173,13 @@ Image render_v2(const RenderData& rd, double center_lat, double center_lon,
                 int ix = static_cast<int>(dx + half_w);
                 int iy = static_cast<int>(dy + half_h);
                 pixels.push_back({ix, iy});
-
-                any_visible |= (ix >= 0 && ix < width && iy >= 0 && iy < height);
             }
 
-            if (!any_visible || pixels.size() < 2) continue;
+            if (pixels.size() < 2) continue;
 
-            // Rasterize
+            // Rasterize — bbox check above already confirms overlap with tile.
+            // Don't require any vertex to be inside the tile: ways can cross
+            // tile boundaries with no vertex inside (common at max zoom).
             if (rw.style.fill) {
                 raster::fill_polygon(img, pixels, rw.style.color);
             } else {
