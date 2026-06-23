@@ -294,20 +294,19 @@ int main(int argc, char* argv[]) {
             // Build viewport image from cached tiles
             Image vp_img(vp_width, vp_height);
             vp_img.fill(0xF5, 0xF5, 0xF5);
+            int missing_count = 0;
 
             for (int ty = ty0; ty <= ty1; ++ty) {
                 for (int tx = tx0; tx <= tx1; ++tx) {
                     TileKey key{tx, ty, zoom};
                     auto it = tile_cache.find(key);
-                    if (it == tile_cache.end()) continue;
-                    it->second.frame_id = frame_counter; // mark as used
+                    if (it == tile_cache.end()) { missing_count++; continue; }
+                    it->second.frame_id = frame_counter;
 
                     const Image& tile = it->second.img;
-                    // Screen position of tile's top-left corner
                     int sx0 = static_cast<int>(tx * TILE_SIZE - vp_x0);
                     int sy0 = static_cast<int>(ty * TILE_SIZE - vp_y0);
 
-                    // Blit: copy tile pixels to viewport image (only visible portion)
                     int copy_x0 = std::max(0, -sx0);
                     int copy_y0 = std::max(0, -sy0);
                     int copy_x1 = std::min(TILE_SIZE, vp_width - sx0);
@@ -322,7 +321,28 @@ int main(int argc, char* argv[]) {
                             vp_img.pixels[screen_y * vp_width + screen_x] = tile.pixels[py * TILE_SIZE + px];
                         }
                     }
+
+                    // Draw 1-pixel green border around each loaded tile
+                    for (int px = copy_x0; px < copy_x1; ++px) {
+                        if (copy_y0 == 0 && sy0 >= 0 && sy0 < vp_height && sx0+px >= 0 && sx0+px < vp_width)
+                            vp_img.pixels[sy0 * vp_width + sx0 + px] = 0x00FF0088;
+                        if (copy_y1 == TILE_SIZE && sy0+TILE_SIZE-1 >= 0 && sy0+TILE_SIZE-1 < vp_height && sx0+px >= 0 && sx0+px < vp_width)
+                            vp_img.pixels[(sy0+TILE_SIZE-1) * vp_width + sx0 + px] = 0x00FF0088;
+                    }
+                    for (int py = copy_y0; py < copy_y1; ++py) {
+                        if (copy_x0 == 0 && sx0 >= 0 && sx0 < vp_width && sy0+py >= 0 && sy0+py < vp_height)
+                            vp_img.pixels[(sy0+py) * vp_width + sx0] = 0x00FF0088;
+                        if (copy_x1 == TILE_SIZE && sx0+TILE_SIZE-1 >= 0 && sx0+TILE_SIZE-1 < vp_width && sy0+py >= 0 && sy0+py < vp_height)
+                            vp_img.pixels[(sy0+py) * vp_width + sx0 + TILE_SIZE - 1] = 0x00FF0088;
+                    }
                 }
+            }
+
+            // Title shows missing tile count
+            if (missing_count > 0) {
+                static char dbg_buf[256];
+                std::snprintf(dbg_buf, sizeof(dbg_buf), "%s [MISSING:%d]", "Tiny Map Renderer", missing_count);
+                SDL_SetWindowTitle(window, dbg_buf);
             }
 
             if (!update_texture(texture, sdl_renderer, vp_img)) {
