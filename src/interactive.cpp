@@ -50,7 +50,7 @@ static double clamp(double v, double lo, double hi) { return std::max(lo, std::m
 static bool update_texture(SDL_Texture*& texture, SDL_Renderer* sdl_renderer,
                            const Image& img) {
     if (texture) SDL_DestroyTexture(texture);
-    texture = SDL_CreateTexture(sdl_renderer, SDL_PIXELFORMAT_ABGR8888,
+    texture = SDL_CreateTexture(sdl_renderer, SDL_PIXELFORMAT_RGBA8888,
                                 SDL_TEXTUREACCESS_STREAMING, img.width, img.height);
     if (!texture) return false;
     SDL_UpdateTexture(texture, nullptr, img.pixels.data(), img.width * 4);
