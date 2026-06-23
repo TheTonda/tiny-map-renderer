@@ -248,6 +248,15 @@ int main(int argc, char* argv[]) {
             int tx1 = static_cast<int>(std::floor((vp_x1 - 1e-9) / TILE_SIZE));
             int ty1 = static_cast<int>(std::floor((vp_y1 - 1e-9) / TILE_SIZE));
 
+            // Clamp to valid Mercator tile range (prevents inf/NaN from out-of-bounds Y)
+            int max_tile_y = (1 << zoom) - 1;
+            if (ty0 < 0) ty0 = 0;
+            if (ty1 > max_tile_y) ty1 = max_tile_y;
+            if (tx0 < 0) tx0 = 0;
+            int max_tile_x = (1 << zoom) - 1;
+            if (tx1 > max_tile_x) tx1 = max_tile_x;
+            if (tx0 > tx1 || ty0 > ty1) { dirty = false; continue; }
+
             // LRU eviction: clear stale tiles periodically
             if (tile_cache.size() > MAX_CACHED_TILES) {
                 // Find oldest tile

@@ -40,6 +40,9 @@ struct TileMath {
     }
 
     static double lat_to_world_py(double lat, int z) {
+        // Clamp to Mercator bounds (~85.05°) to avoid inf/NaN
+        if (lat > 85.05) lat = 85.05;
+        if (lat < -85.05) lat = -85.05;
         double s = std::sin(lat * M_PI / 180.0);
         // atanh(s) = 0.5 * log((1+s)/(1-s)) — 2 transcendentals vs old 3 (tan+cos+log)
         double merc_n = 0.5 * std::log((1.0 + s) / (1.0 - s));
