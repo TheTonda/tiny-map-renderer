@@ -165,14 +165,14 @@ StyleEngine::StyleEngine() {
 std::optional<Style> StyleEngine::style_for_way(
     const std::unordered_map<std::string, std::string>& tags) const
 {
-    // Boundaries: only render admin_level 2-6
+    // Boundaries: only render admin_level 2-6 if set, accept all if not set
     auto admin_it = tags.find("admin_level");
-    bool is_boundary = false;
+    bool is_boundary = true;
     if (admin_it != tags.end()) {
         int level = 0;
         auto [ptr, ec] = std::from_chars(admin_it->second.data(),
                                          admin_it->second.data() + admin_it->second.size(), level);
-        if (ec == std::errc{} && level >= 2 && level <= 6) is_boundary = true;
+        if (ec == std::errc{} && (level < 2 || level > 6)) is_boundary = false;
     }
 
     for (const auto& rule : rules) {
