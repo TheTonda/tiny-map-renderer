@@ -104,7 +104,12 @@ void fill_polygon(Image& img, const std::vector<std::pair<int,int>>& points, uin
         if (y > max_y) max_y = y;
     }
 
-    // Pre-allocate intersection vector once to avoid per-scanline allocation
+    // Clamp to image bounds
+    if (min_y < 0) min_y = 0;
+    if (max_y >= img.height) max_y = img.height - 1;
+    if (min_y > max_y) return;
+
+    // Pre-allocate intersection vector once
     std::vector<int> intersections;
     intersections.reserve(n);
 
@@ -124,26 +129,32 @@ void fill_polygon(Image& img, const std::vector<std::pair<int,int>>& points, uin
             int x1 = points[(i + 1) % n].first;
 
             // Integer fixed-point: multiply before divide for precision
-            // Use 64-bit to avoid overflow with large coordinates
             int64_t num = static_cast<int64_t>(x1 - x0) * (y - y0);
             int denom = y1 - y0;
             int x = static_cast<int>(x0 + num / denom);
 
-            // Fix rounding: std::ceil behavior for positive/negative slopes
-            if (num % denom != 0) {
-                if ((denom > 0) == (num > 0)) ++x;
-            }
+            // Ceil rounding: increment when fractional part exists
+            if (num % denom != 0 && (denom > 0) == (num > 0)) ++x;
 
             intersections.push_back(x);
         }
 
-        std::sort(intersections.begin(), intersections.end());
+        // Inline sort for small N (common case: 2-8 intersections)
+        if (intersections.size() <= 1) continue;
+        if (intersections.size() == 2) {
+            if (intersections[0] > intersections[1])
+                std::swap(intersections[0], intersections[1]);
+        } else {
+            std::sort(intersections.begin(), intersections.end());
+        }
 
         for (size_t i = 0; i + 1 < intersections.size(); i += 2) {
             int x_start = intersections[i];
-            int x_end = intersections[i + 1];
+            int x_end   = intersections[i + 1];
+            if (x_start < 0) x_start = 0;
+            if (x_end > img.width) x_end = img.width;
             for (int x = x_start; x < x_end; ++x) {
-                img.set_pixel(x, y, color);
+                img.set_pixel_unsafe(x, y, color);
             }
         }
     }

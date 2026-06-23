@@ -40,8 +40,9 @@ struct TileMath {
     }
 
     static double lat_to_world_py(double lat, int z) {
-        double lat_rad = lat * M_PI / 180.0;
-        double merc_n = std::log(std::tan(lat_rad) + 1.0 / std::cos(lat_rad));
+        double s = std::sin(lat * M_PI / 180.0);
+        // atanh(s) = 0.5 * log((1+s)/(1-s)) — 2 transcendentals vs old 3 (tan+cos+log)
+        double merc_n = 0.5 * std::log((1.0 + s) / (1.0 - s));
         return (1.0 - merc_n / M_PI) / 2.0 * (TILE_SIZE << z);
     }
 

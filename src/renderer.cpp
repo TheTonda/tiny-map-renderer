@@ -62,8 +62,10 @@ Image Renderer::render(const Viewport& vp) const {
         visible_ways.push_back({std::move(pixels), *style_opt, style_opt->z_order});
     }
 
-    // Sort by z_order (background first)
-    std::sort(visible_ways.begin(), visible_ways.end(),
+    // Sort by z_order (background first). Use stable sort so
+    // that same-z_order ways render consistently regardless of
+    // hash map iteration order (important for binary vs XML parity).
+    std::stable_sort(visible_ways.begin(), visible_ways.end(),
         [](const WayEntry& a, const WayEntry& b) {
             return a.z_order < b.z_order;
         });

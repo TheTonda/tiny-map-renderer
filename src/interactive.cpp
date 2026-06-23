@@ -1,4 +1,5 @@
 #include "osm_parser.h"
+#include "osm_binary.h"
 #include "renderer.h"
 #include "tile_math.h"
 #include <SDL2/SDL.h>
@@ -6,6 +7,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 
 static constexpr int DEFAULT_WIDTH = 1024;
@@ -44,7 +46,12 @@ int main(int argc, char* argv[]) {
 
     OSMData data;
     try {
-        data = parse_osm_xml(osm_file);
+        size_t len = osm_file.size();
+        if (len >= 4 && osm_file.compare(len - 4, 4, ".tmr") == 0) {
+            data = read_osm_binary(osm_file);
+        } else {
+            data = parse_osm_xml(osm_file);
+        }
     } catch (const std::exception& e) {
         std::fprintf(stderr, "Error parsing OSM file: %s\n", e.what());
         return 1;

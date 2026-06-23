@@ -11,3 +11,7 @@ test_style
 test_renderer
 tiny-map
 map-viewer
+*.tmr
+*.ttl
+.opencode/
+data/

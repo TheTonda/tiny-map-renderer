@@ -12,19 +12,22 @@
 
 A from-scratch software map renderer in C++23 with no external graphics libraries (stdlib only, `map-viewer` additionally requires SDL2).
 
-Pipeline: OSM XML → osm_parser → OSMData → Renderer (projection + clip + style + rasterize) → Image → PPM
+Pipeline: OSM XML → osm_parser → OSMData → Renderer (projection + clip + style + rasterize) → Image → PPM/TTL
 
 ```
 src/
-  image.{h,cpp}        — Pixel buffer, RGBA packed as uint32_t, PPM export (P6 binary, buffered write, drops alpha)
-  tile_math.h           — Mercator projection math (header-only), Slippy Map tilenames convention
-  rasterizer.{h,cpp}    — Bresenham lines, polygon fill (pre-allocated int intersections, ceil-rounding), thick lines via polygon quads; namespace `raster`
+  image.{h,cpp}        — Pixel buffer, RGBA packed as uint32_t, PPM export (P6 binary, buffered write), set_pixel_unsafe
+  tile_math.h           — Mercator projection math (header-only), simplified trig (atanh via log)
+  rasterizer.{h,cpp}    — Bresenham lines, polygon fill (pre-allocated int intersections, ceil-rounding), thick lines via polygon quads
   clip.{h,cpp}          — Cohen-Sutherland line clipping (double and int overloads)
   osm_model.h           — Node/Way/Relation/OSMData (header-only, methods inline)
-  osm_parser.{h,cpp}    — mmap-based XML parser with hand-rolled attribute scanner (no regex, from_chars for numbers)
+  osm_parser.{h,cpp}    — mmap-based XML parser, hand-rolled memchr attribute scanner, from_chars numbers
+  osm_binary.{h,cpp}    — Compact binary format (.tmr): ~6× smaller than XML, mmap-loaded, ~2× faster parse
+  tile_format.{h,cpp}   — Palette + RLE tile output (.ttl): ~10× smaller than PPM
   style.{h,cpp}         — StyleEngine maps OSM tags → color/width/fill/z_order
-  renderer.{h,cpp}      — Renderer: single-pass viewport projection + visibility culling, sorting by z_order, clipping + rasterization
-  main.cpp              — CLI tool: ./tiny-map <osm-file> <lat> <lon> <zoom> <w> <h> <out.ppm>
+  renderer.{h,cpp}      — Renderer: single-pass projection + culling, stable_sort by z_order, clipping + rasterization
+  main.cpp              — CLI: ./tiny-map <file.osm|file.tmr> <lat> <lon> <zoom> <w> <h> <out.ppm|out.ttl>
+                         — CLI: ./tiny-map --compile <file.osm>  (produces .tmr)
   interactive.cpp       — SDL2 interactive viewer: ./map-viewer <osm-file> [lat] [lon] [zoom]
 ```
 
