@@ -1,12 +1,13 @@
 #include "osm_parser.h"
 #include "renderer.h"
-#include <iostream>
+#include <cstdio>
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 
 int main(int argc, char* argv[]) {
     if (argc != 8) {
-        std::cerr << "Usage: " << argv[0] << " <osm-file> <lat> <lon> <zoom> <width> <height> <output.ppm>\n";
+        std::fprintf(stderr, "Usage: %s <osm-file> <lat> <lon> <zoom> <width> <height> <output.ppm>\n", argv[0]);
         return 1;
     }
 
@@ -25,7 +26,7 @@ int main(int argc, char* argv[]) {
         width = std::stoi(argv[5]);
         height = std::stoi(argv[6]);
     } catch (const std::exception& e) {
-        std::cerr << "Error: invalid numeric argument: " << e.what() << "\n";
+        std::fprintf(stderr, "Error: invalid numeric argument: %s\n", e.what());
         return 1;
     }
 
@@ -33,23 +34,23 @@ int main(int argc, char* argv[]) {
     try {
         data = parse_osm_xml(osm_file);
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << "\n";
+        std::fprintf(stderr, "Error: %s\n", e.what());
         return 1;
     }
 
-    std::cerr << "Parsed " << data.nodes.size() << " nodes, " << data.ways.size() << " ways\n";
+    std::fprintf(stderr, "Parsed %zu nodes, %zu ways\n", data.nodes.size(), data.ways.size());
 
     Viewport vp{lat, lon, zoom, width, height};
 
     Renderer renderer(data);
-    std::cerr << "Rendering...\n";
+    std::fprintf(stderr, "Rendering...\n");
     Image img = renderer.render(vp);
 
     if (!img.write_ppm(output_path)) {
-        std::cerr << "Error: failed to write " << output_path << "\n";
+        std::fprintf(stderr, "Error: failed to write %s\n", output_path.c_str());
         return 1;
     }
 
-    std::cerr << "Wrote " << output_path << "\n";
+    std::fprintf(stderr, "Wrote %s\n", output_path.c_str());
     return 0;
 }

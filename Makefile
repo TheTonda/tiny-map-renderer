@@ -1,7 +1,12 @@
 CXX = g++
-CXXFLAGS = -std=c++23 -O2 -Wall -Wextra -Isrc
+CXXFLAGS = -std=c++23 -O2 -Wall -Wextra -Isrc -fdata-sections -ffunction-sections
+LDFLAGS = -Wl,--gc-sections
 SDL_CFLAGS = $(shell pkg-config --cflags sdl2)
 SDL_LIBS = $(shell pkg-config --libs sdl2)
+
+# Release builds: strip + no RTTI for smaller binaries
+RELEASE_FLAGS = -fno-rtti
+RELEASE_LDFLAGS = -Wl,--strip-all
 
 all: test_image test_tile_math test_rasterizer test_polyfill test_thick_line test_clip test_osm_model test_osm_parser test_style test_renderer tiny-map map-viewer
 
@@ -36,10 +41,10 @@ test_renderer: tests/test_renderer.cpp src/renderer.cpp src/image.cpp src/raster
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 tiny-map: src/main.cpp src/renderer.cpp src/image.cpp src/rasterizer.cpp src/style.cpp src/clip.cpp src/osm_parser.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) $(RELEASE_FLAGS) $(LDFLAGS) $(RELEASE_LDFLAGS) -o $@ $^
 
 map-viewer: src/interactive.cpp src/renderer.cpp src/image.cpp src/rasterizer.cpp src/style.cpp src/clip.cpp src/osm_parser.cpp
-	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) -o $@ $^ $(SDL_LIBS)
+	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) $(LDFLAGS) -o $@ $^ $(SDL_LIBS)
 
 clean:
 	rm -f test_image test_tile_math test_rasterizer test_polyfill test_thick_line test_clip test_osm_model test_osm_parser test_style test_renderer tiny-map map-viewer *.o

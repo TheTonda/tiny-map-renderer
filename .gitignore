@@ -1,0 +1,13 @@
+*.o
+test_image
+test_tile_math
+test_rasterizer
+test_polyfill
+test_thick_line
+test_clip
+test_osm_model
+test_osm_parser
+test_style
+test_renderer
+tiny-map
+map-viewer
