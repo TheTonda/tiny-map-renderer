@@ -76,18 +76,22 @@ Image Renderer::render(const Viewport& vp) const {
         if (entry.style.fill) {
             raster::fill_polygon(img, entry.pixels, entry.style.color);
         } else {
-            auto inside = [&](int x, int y) { return x >= 0 && x < vp.width && y >= 0 && y < vp.height; };
+            const int margin = 1;
+            const int cw = vp.width + margin;
+            const int ch = vp.height + margin;
+
+            auto inside = [&](int x, int y) { return x >= -margin && x < cw && y >= -margin && y < ch; };
             auto draw_seg = [&](int x0, int y0, int x1, int y1, uint32_t c, int w) {
                 if (inside(x0, y0) && inside(x1, y1)) {
                     raster::draw_line_thick(img, x0, y0, x1, y1, c, w);
-                } else if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, 0, 0, vp.width, vp.height)) {
+                } else if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, -margin, -margin, cw, ch)) {
                     raster::draw_line_thick(img, x0, y0, x1, y1, c, w);
                 }
             };
             auto draw_seg_dashed = [&](int x0, int y0, int x1, int y1, uint32_t c, int w) {
                 if (inside(x0, y0) && inside(x1, y1)) {
                     raster::draw_line_dashed(img, x0, y0, x1, y1, c, w, entry.style.dash_on, entry.style.dash_off);
-                } else if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, 0, 0, vp.width, vp.height)) {
+                } else if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, -margin, -margin, cw, ch)) {
                     raster::draw_line_dashed(img, x0, y0, x1, y1, c, w, entry.style.dash_on, entry.style.dash_off);
                 }
             };
@@ -199,19 +203,24 @@ Image render_v2(const RenderData& rd, double center_lat, double center_lon,
             if (rw.style.fill) {
                 raster::fill_polygon(img, pixels, rw.style.color);
             } else {
-                // Helper: draw segment, only clipping when needed
-                auto inside = [=](int x, int y) { return x >= 0 && x < width && y >= 0 && y < height; };
+                // 1-pixel overlap clip margins: adjacent tiles draw boundary
+                // pixels, eliminating gaps from ceil rounding at max zoom.
+                const int margin = 1;
+                const int cw = width + margin;
+                const int ch = height + margin;
+
+                auto inside = [=](int x, int y) { return x >= -margin && x < cw && y >= -margin && y < ch; };
                 auto draw_seg = [&](int x0, int y0, int x1, int y1, uint32_t c, int w) {
                     if (inside(x0, y0) && inside(x1, y1)) {
                         raster::draw_line_thick(img, x0, y0, x1, y1, c, w);
-                    } else if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, 0, 0, width, height)) {
+                    } else if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, -margin, -margin, cw, ch)) {
                         raster::draw_line_thick(img, x0, y0, x1, y1, c, w);
                     }
                 };
                 auto draw_seg_dashed = [&](int x0, int y0, int x1, int y1, uint32_t c, int w) {
                     if (inside(x0, y0) && inside(x1, y1)) {
                         raster::draw_line_dashed(img, x0, y0, x1, y1, c, w, rw.style.dash_on, rw.style.dash_off);
-                    } else if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, 0, 0, width, height)) {
+                    } else if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, -margin, -margin, cw, ch)) {
                         raster::draw_line_dashed(img, x0, y0, x1, y1, c, w, rw.style.dash_on, rw.style.dash_off);
                     }
                 };
