@@ -125,13 +125,23 @@ void draw_line_thick(Image& img, int x0, int y0, int x1, int y1, uint32_t color,
     double nx = -dy * half / len;
     double ny =  dx * half / len;
 
+    // Extend endpoints by half-thickness along the line direction.
+    // Adjacent segments overlap at joints, sealing corner gaps
+    // that ceil-rounded quads leave at sharp turns.
+    double ext = thickness * 0.5;
+    double ux = dx * ext / len;
+    double uy = dy * ext / len;
+    double ex0 = x0 - ux;
+    double ey0 = y0 - uy;
+    double ex1 = x1 + ux;
+    double ey1 = y1 + uy;
+
     // Use ceil for all corners to ensure the quad fully covers the line
-    // (truncation would miss pixels at the outer edges)
     std::vector<std::pair<int,int>> quad = {
-        {static_cast<int>(std::ceil(x0 + nx)), static_cast<int>(std::ceil(y0 + ny))},
-        {static_cast<int>(std::ceil(x1 + nx)), static_cast<int>(std::ceil(y1 + ny))},
-        {static_cast<int>(std::ceil(x1 - nx)), static_cast<int>(std::ceil(y1 - ny))},
-        {static_cast<int>(std::ceil(x0 - nx)), static_cast<int>(std::ceil(y0 - ny))}
+        {static_cast<int>(std::ceil(ex0 + nx)), static_cast<int>(std::ceil(ey0 + ny))},
+        {static_cast<int>(std::ceil(ex1 + nx)), static_cast<int>(std::ceil(ey1 + ny))},
+        {static_cast<int>(std::ceil(ex1 - nx)), static_cast<int>(std::ceil(ey1 - ny))},
+        {static_cast<int>(std::ceil(ex0 - nx)), static_cast<int>(std::ceil(ey0 - ny))}
     };
 
     fill_polygon(img, quad, color);
