@@ -76,11 +76,19 @@ Image Renderer::render(const Viewport& vp) const {
         if (entry.style.fill) {
             raster::fill_polygon(img, entry.pixels, entry.style.color);
         } else {
+            bool has_casing = entry.style.casing_width > 0;
             for (size_t i = 0; i + 1 < entry.pixels.size(); ++i) {
                 int x0 = entry.pixels[i].first;
                 int y0 = entry.pixels[i].second;
                 int x1 = entry.pixels[i + 1].first;
                 int y1 = entry.pixels[i + 1].second;
+                if (has_casing) {
+                    int cx0 = x0, cy0 = y0, cx1 = x1, cy1 = y1;
+                    if (clip_line_cohen_sutherland_int(cx0, cy0, cx1, cy1, 0, 0, vp.width, vp.height)) {
+                        raster::draw_line_thick(img, cx0, cy0, cx1, cy1,
+                            entry.style.casing_color, entry.style.width + entry.style.casing_width);
+                    }
+                }
                 if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, 0, 0, vp.width, vp.height)) {
                     raster::draw_line_thick(img, x0, y0, x1, y1, entry.style.color, entry.style.width);
                 }
@@ -176,11 +184,21 @@ Image render_v2(const RenderData& rd, double center_lat, double center_lon,
             if (rw.style.fill) {
                 raster::fill_polygon(img, pixels, rw.style.color);
             } else {
+                // Draw casing first (if present)
+                bool has_casing = rw.style.casing_width > 0;
                 for (size_t i = 0; i + 1 < pixels.size(); ++i) {
                     int x0 = pixels[i].first;
                     int y0 = pixels[i].second;
                     int x1 = pixels[i + 1].first;
                     int y1 = pixels[i + 1].second;
+
+                    if (has_casing) {
+                        int cx0 = x0, cy0 = y0, cx1 = x1, cy1 = y1;
+                        if (clip_line_cohen_sutherland_int(cx0, cy0, cx1, cy1, 0, 0, width, height)) {
+                            raster::draw_line_thick(img, cx0, cy0, cx1, cy1,
+                                rw.style.casing_color, rw.style.width + rw.style.casing_width);
+                        }
+                    }
                     if (clip_line_cohen_sutherland_int(x0, y0, x1, y1, 0, 0, width, height)) {
                         raster::draw_line_thick(img, x0, y0, x1, y1, rw.style.color, rw.style.width);
                     }

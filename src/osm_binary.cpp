@@ -284,7 +284,9 @@ bool write_osm_binary_v2(const OSMData& data, const std::string& path) {
         uint8_t idx = 0;
         for (; idx < style_palette.size(); ++idx) {
             if (style_palette[idx].color == s.color &&
+                style_palette[idx].casing_color == s.casing_color &&
                 style_palette[idx].width == s.width &&
+                style_palette[idx].casing_width == s.casing_width &&
                 style_palette[idx].fill == s.fill &&
                 style_palette[idx].z_order == s.z_order) break;
         }
@@ -292,9 +294,9 @@ bool write_osm_binary_v2(const OSMData& data, const std::string& path) {
         way_style_idx[wi] = idx;
     }
 
-    // --- Write v2 binary ---
+    // --- Write v2 binary (version 3: adds casing support to Style) ---
     std::fwrite("TMR2", 4, 1, f);
-    w32(f, 2); // version
+    w32(f, 3); // version
 
     // Header
     w32(f, REF_ZOOM);
@@ -312,12 +314,14 @@ bool write_osm_binary_v2(const OSMData& data, const std::string& path) {
         wi32(f, pn.wy);
     }
 
-    // Style palette
+    // Style palette (v3: includes casing fields)
     uint8_t psize = static_cast<uint8_t>(style_palette.size());
     w8(f, psize);
     for (const auto& s : style_palette) {
         w32(f, s.color);
+        w32(f, s.casing_color);
         w8(f, static_cast<uint8_t>(s.width));
+        w8(f, static_cast<uint8_t>(s.casing_width));
         w8(f, s.fill ? 1 : 0);
         w8(f, static_cast<uint8_t>(s.z_order));
     }
@@ -395,7 +399,8 @@ RenderData read_render_data(const std::string& path) {
         return rd;
     }
     p += 4;
-    if (r32(p) != 2) {
+    uint32_t file_ver = r32(p);
+    if (file_ver < 2 || file_ver > 3) {
         munmap(const_cast<uint8_t*>(map), size);
         return rd;
     }
@@ -417,12 +422,20 @@ RenderData read_render_data(const std::string& path) {
         rd.nodes[i].wy = ri32(p);
     }
 
-    // Style palette
+    // Style palette (v2: 7 bytes, v3: 11 bytes)
     uint8_t style_count = r8(p);
     std::vector<Style> styles(style_count);
     for (uint8_t i = 0; i < style_count; ++i) {
         styles[i].color = r32(p);
-        styles[i].width = r8(p);
+        if (file_ver >= 3) {
+            styles[i].casing_color = r32(p);
+            styles[i].width = r8(p);
+            styles[i].casing_width = r8(p);
+        } else {
+            styles[i].casing_color = 0;
+            styles[i].width = r8(p);
+            styles[i].casing_width = 0;
+        }
         styles[i].fill = r8(p) != 0;
         styles[i].z_order = r8(p);
     }

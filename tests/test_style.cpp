@@ -1,15 +1,15 @@
 #include "style.h"
 #include <cstdlib>
-#include <iostream>
+#include <cstdio>
 #include <unordered_map>
 
 static int failures = 0;
 
 static void check(bool condition, const char* desc) {
     if (condition) {
-        std::cout << "PASS: " << desc << '\n';
+        std::printf("PASS: %s\n", desc);
     } else {
-        std::cout << "FAIL: " << desc << '\n';
+        std::printf("FAIL: %s\n", desc);
         ++failures;
     }
 }
@@ -21,10 +21,12 @@ int main() {
         std::unordered_map<std::string, std::string> tags = {{"highway", "primary"}};
         auto style = engine.style_for_way(tags);
         check(style.has_value(), "highway=primary -> has style");
-        check(style->color == 0xF9B29CFF, "highway=primary -> color=0xF9B29CFF");
+        check(style->color == 0xFDBF6FFF, "highway=primary -> color");
+        check(style->casing_color == 0xD99B5EFF, "highway=primary -> casing_color");
         check(style->width == 4, "highway=primary -> width=4");
+        check(style->casing_width == 2, "highway=primary -> casing_width=2");
         check(style->fill == false, "highway=primary -> fill=false");
-        check(style->z_order == 8, "highway=primary -> z_order=8");
+        check(style->z_order == 17, "highway=primary -> z_order=17");
     }
 
     {
@@ -33,7 +35,7 @@ int main() {
         check(style.has_value(), "building=yes -> has style");
         check(style->fill == true, "building=yes -> fill=true");
         check(style->width == 0, "building=yes -> width=0");
-        check(style->z_order == 2, "building=yes -> z_order=2");
+        check(style->z_order == 1, "building=yes -> z_order=1");
     }
 
     {
@@ -46,7 +48,7 @@ int main() {
     {
         std::unordered_map<std::string, std::string> tags = {{"highway", "service"}};
         auto style = engine.style_for_way(tags);
-        check(!style.has_value(), "highway=service -> nullopt (not in rules)");
+        check(style.has_value(), "highway=service -> has style (now in rules)");
     }
 
     {
@@ -59,8 +61,8 @@ int main() {
         std::unordered_map<std::string, std::string> tags = {{"waterway", "stream"}};
         auto style = engine.style_for_way(tags);
         check(style.has_value(), "waterway=stream -> has style");
-        check(style->color == 0x7FC5E7FF, "waterway=stream -> color=0x7FC5E7FF");
-        check(style->width == 2, "waterway=stream -> width=2");
+        check(style->color == 0xB1CFECFF, "waterway=stream -> color=0xB1CFECFF");
+        check(style->width == 1, "waterway=stream -> width=1");
     }
 
     {
@@ -70,13 +72,50 @@ int main() {
         };
         auto style = engine.style_for_way(tags);
         check(style.has_value(), "highway=residential + name -> has style");
-        check(style->width == 2, "highway=residential + name -> width=2 (first match wins)");
+        check(style->width == 2, "highway=residential + name -> width=2");
+    }
+
+    {
+        std::unordered_map<std::string, std::string> tags = {{"highway", "motorway"}};
+        auto style = engine.style_for_way(tags);
+        check(style.has_value(), "highway=motorway -> has style");
+        check(style->casing_width == 3, "highway=motorway -> casing_width=3");
+        check(style->casing_color == 0xC54E6EFF, "highway=motorway -> casing_color");
+    }
+
+    {
+        std::unordered_map<std::string, std::string> tags = {{"highway", "cycleway"}};
+        auto style = engine.style_for_way(tags);
+        check(style.has_value(), "highway=cycleway -> has style");
+        check(style->casing_width == 0, "highway=cycleway -> no casing");
+    }
+
+    {
+        std::unordered_map<std::string, std::string> tags = {{"landuse", "forest"}};
+        auto style = engine.style_for_way(tags);
+        check(style.has_value(), "landuse=forest -> has style");
+        check(style->fill == true, "landuse=forest -> fill=true");
+        check(style->z_order == 0, "landuse=forest -> z_order=0 (background)");
+    }
+
+    {
+        std::unordered_map<std::string, std::string> tags = {{"leisure", "park"}};
+        auto style = engine.style_for_way(tags);
+        check(style.has_value(), "leisure=park -> has style");
+        check(style->fill == true, "leisure=park -> fill=true");
+    }
+
+    {
+        std::unordered_map<std::string, std::string> tags = {{"railway", "rail"}};
+        auto style = engine.style_for_way(tags);
+        check(style.has_value(), "railway=rail -> has style");
+        check(style->fill == false, "railway=rail -> fill=false");
     }
 
     if (failures == 0) {
-        std::cout << "\nAll tests passed.\n";
+        std::printf("\nAll tests passed.\n");
     } else {
-        std::cout << '\n' << failures << " test(s) failed.\n";
+        std::printf("\n%d test(s) failed.\n", failures);
     }
     return failures == 0 ? 0 : 1;
 }

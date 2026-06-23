@@ -69,6 +69,10 @@ inline void RenderData::query_grid(
     int cell_x1 = static_cast<int>((vp_wx_max - grid_origin_wx) / grid_cell_w);
     int cell_y1 = static_cast<int>((vp_wy_max - grid_origin_wy) / grid_cell_h);
 
+    // Expand by 1 cell in each direction to catch edge-crossing ways
+    cell_x0 -= 1; cell_y0 -= 1;
+    cell_x1 += 1; cell_y1 += 1;
+
     if (cell_x0 < 0) cell_x0 = 0;
     if (cell_y0 < 0) cell_y0 = 0;
     if (cell_x1 >= grid_cols) cell_x1 = grid_cols - 1;

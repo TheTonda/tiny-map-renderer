@@ -7,7 +7,9 @@
 
 struct Style {
     uint32_t color;
+    uint32_t casing_color = 0;  // 0 = no casing
     int width;
+    int casing_width = 0;       // extra width behind the line (draw casing first)
     bool fill;
     int z_order;
 };

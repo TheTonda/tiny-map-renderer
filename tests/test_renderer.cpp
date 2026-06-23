@@ -39,7 +39,7 @@ int main() {
     img.write_ppm("/tmp/test_render.ppm");
 
     const uint32_t bg_color = 0xF5F5F5FF;
-    const uint32_t road_color = 0xF9B29CFF;
+    const uint32_t road_color = 0xFDBF6FFF;  // updated primary road color
 
     int non_bg = 0;
     int road_pixels = 0;
