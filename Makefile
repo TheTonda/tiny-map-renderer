@@ -40,8 +40,8 @@ test_style: tests/test_style.cpp src/style.cpp
 test_renderer: tests/test_renderer.cpp src/renderer.cpp src/image.cpp src/rasterizer.cpp src/style.cpp src/clip.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-tiny-map: src/main.cpp src/renderer.cpp src/image.cpp src/rasterizer.cpp src/style.cpp src/clip.cpp src/osm_parser.cpp src/osm_binary.cpp src/tile_format.cpp
-	$(CXX) $(CXXFLAGS) $(RELEASE_FLAGS) $(LDFLAGS) $(RELEASE_LDFLAGS) -o $@ $^
+tiny-map: src/main.cpp src/renderer.cpp src/image.cpp src/rasterizer.cpp src/style.cpp src/clip.cpp src/osm_parser.cpp src/osm_binary.cpp src/tile_format.cpp src/osm_pbf.cpp
+	$(CXX) $(CXXFLAGS) $(RELEASE_FLAGS) $(LDFLAGS) $(RELEASE_LDFLAGS) -o $@ $^ -lz
 
 map-viewer: src/interactive.cpp src/renderer.cpp src/image.cpp src/rasterizer.cpp src/style.cpp src/clip.cpp src/osm_parser.cpp src/osm_binary.cpp
 	$(CXX) $(CXXFLAGS) $(SDL_CFLAGS) $(LDFLAGS) -o $@ $^ $(SDL_LIBS)

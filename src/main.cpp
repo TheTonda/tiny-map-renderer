@@ -1,4 +1,5 @@
 #include "osm_parser.h"
+#include "osm_pbf.h"
 #include "osm_binary.h"
 #include "render_data.h"
 #include "renderer.h"
@@ -37,7 +38,11 @@ int main(int argc, char* argv[]) {
 
         OSMData data;
         try {
-            data = parse_osm_xml(in);
+            if (has_suffix(in, ".pbf")) {
+                data = parse_osm_pbf(in);
+            } else {
+                data = parse_osm_xml(in);
+            }
         } catch (const std::exception& e) {
             std::fprintf(stderr, "Error: %s\n", e.what());
             return 1;
@@ -62,7 +67,11 @@ int main(int argc, char* argv[]) {
 
         OSMData data;
         try {
-            data = parse_osm_xml(in);
+            if (has_suffix(in, ".pbf")) {
+                data = parse_osm_pbf(in);
+            } else {
+                data = parse_osm_xml(in);
+            }
         } catch (const std::exception& e) {
             std::fprintf(stderr, "Error: %s\n", e.what());
             return 1;
@@ -119,7 +128,11 @@ int main(int argc, char* argv[]) {
             data = read_osm_binary(input_file);
         }
         if (!is_v2 && !has_suffix(input_file, ".tmr")) {
-            data = parse_osm_xml(input_file);
+            if (has_suffix(input_file, ".pbf")) {
+                data = parse_osm_pbf(input_file);
+            } else {
+                data = parse_osm_xml(input_file);
+            }
         }
     } catch (const std::exception& e) {
         std::fprintf(stderr, "Error: %s\n", e.what());
