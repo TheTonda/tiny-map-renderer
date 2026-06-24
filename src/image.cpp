@@ -63,3 +63,32 @@ bool Image::write_ppm(const std::string& path) const {
     std::fclose(f);
     return true;
 }
+
+void Image::downsample_2x(const Image& src) {
+    // Average each 2×2 source block into one destination pixel.
+    // Per-channel average with rounding (+2 before /4).
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            int sx = x * 2;
+            int sy = y * 2;
+            uint32_t a = src.pixels[sy * src.width + sx];
+            uint32_t b = src.pixels[sy * src.width + sx + 1];
+            uint32_t c = src.pixels[(sy + 1) * src.width + sx];
+            uint32_t d = src.pixels[(sy + 1) * src.width + sx + 1];
+
+            int r = ((a >> 24) & 0xFF) + ((b >> 24) & 0xFF) +
+                    ((c >> 24) & 0xFF) + ((d >> 24) & 0xFF);
+            int g = ((a >> 16) & 0xFF) + ((b >> 16) & 0xFF) +
+                    ((c >> 16) & 0xFF) + ((d >> 16) & 0xFF);
+            int b_ = ((a >> 8) & 0xFF) + ((b >> 8) & 0xFF) +
+                     ((c >> 8) & 0xFF) + ((d >> 8) & 0xFF);
+            int al = (a & 0xFF) + (b & 0xFF) + (c & 0xFF) + (d & 0xFF);
+
+            pixels[y * width + x] =
+                (static_cast<uint32_t>((r + 2) / 4) << 24) |
+                (static_cast<uint32_t>((g + 2) / 4) << 16) |
+                (static_cast<uint32_t>((b_ + 2) / 4) << 8)  |
+                static_cast<uint32_t>((al + 2) / 4);
+        }
+    }
+}

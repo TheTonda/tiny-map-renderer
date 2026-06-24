@@ -19,4 +19,8 @@ public:
 
     void fill(uint8_t r, uint8_t g, uint8_t b);
     bool write_ppm(const std::string& path) const;
+
+    // Downsample a 2W×2H source image to W×H by averaging 2×2 blocks.
+    // Source must have exactly 2× this image's dimensions.
+    void downsample_2x(const Image& src);
 };

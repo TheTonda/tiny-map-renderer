@@ -94,3 +94,8 @@ inline void RenderData::query_grid(
 // Uses the spatial grid to only iterate ways overlapping the viewport.
 Image render_v2(const RenderData& rd, double center_lat, double center_lon,
                 int zoom, int width, int height);
+
+// Anti-aliased version: renders at 2× resolution then downsamples.
+// Smooths polygon edges, curves, and thin lines.
+Image render_v2_aa(const RenderData& rd, double center_lat, double center_lon,
+                   int zoom, int width, int height);

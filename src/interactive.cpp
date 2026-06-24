@@ -280,7 +280,7 @@ int main(int argc, char* argv[]) {
 
                         Image tile_img(TILE_SIZE, TILE_SIZE);
                         if (use_v2) {
-                            tile_img = render_v2(rd, tile_lat, tile_lon, zoom, TILE_SIZE, TILE_SIZE);
+                            tile_img = render_v2_aa(rd, tile_lat, tile_lon, zoom, TILE_SIZE, TILE_SIZE);
                         } else {
                             Viewport tvp{tile_lat, tile_lon, zoom, TILE_SIZE, TILE_SIZE};
                             Renderer renderer(osm);

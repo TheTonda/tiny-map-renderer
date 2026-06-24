@@ -256,3 +256,16 @@ Image render_v2(const RenderData& rd, double center_lat, double center_lon,
 
     return img;
 }
+
+// ============================================================
+// Anti-aliased v2: render at 2× then downsample
+// ============================================================
+
+Image render_v2_aa(const RenderData& rd, double center_lat, double center_lon,
+                   int zoom, int width, int height)
+{
+    Image hires = render_v2(rd, center_lat, center_lon, zoom, width * 2, height * 2);
+    Image result(width, height);
+    result.downsample_2x(hires);
+    return result;
+}
