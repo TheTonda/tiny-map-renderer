@@ -174,6 +174,7 @@ bool parse_primitive_block(const std::vector<uint8_t>& buf, PBFParseState& st) {
     st.lat_offset = 0;
     st.lon_offset = 0;
 
+    const uint8_t* strtab_data = nullptr; size_t strtab_len = 0;
     std::vector<const uint8_t*> groups;
     std::vector<size_t> group_lens;
 
@@ -181,11 +182,8 @@ bool parse_primitive_block(const std::vector<uint8_t>& buf, PBFParseState& st) {
         uint32_t fn; int wt;
         if (!read_tag(p, end, fn, wt)) break;
         if (fn == 1 && wt == 2) {
-            // StringTable: repeated bytes — each field is one string
-            // Collect all strings directly into st.strtab
-            const uint8_t* sd; size_t sl;
-            if (read_length_delimited(p, end, sd, sl))
-                st.strtab.emplace_back(reinterpret_cast<const char*>(sd), sl);
+            // StringTable: one blob containing varint-length-prefixed strings
+            read_length_delimited(p, end, strtab_data, strtab_len);
         } else if (fn == 2 && wt == 2) {
             const uint8_t* gd; size_t gl;
             if (read_length_delimited(p, end, gd, gl)) {
@@ -196,6 +194,22 @@ bool parse_primitive_block(const std::vector<uint8_t>& buf, PBFParseState& st) {
         else if (fn == 19 && wt == 0) { uint64_t v; if (read_varint(p, end, v)) st.lat_offset = static_cast<int64_t>(v); }
         else if (fn == 20 && wt == 0) { uint64_t v; if (read_varint(p, end, v)) st.lon_offset = static_cast<int64_t>(v); }
         else { if (!skip_field(p, end, wt)) return false; }
+    }
+
+    // Parse the string table (nested protobuf message: repeated field 1 strings)
+    if (strtab_data) {
+        const uint8_t* sp = strtab_data, *se = sp + strtab_len;
+        while (sp < se) {
+            uint32_t sfn; int swt;
+            if (!read_tag(sp, se, sfn, swt)) break;
+            if (sfn == 1 && swt == 2) { // each string is field 1, wire type 2
+                const uint8_t* sd; size_t sl;
+                if (read_length_delimited(sp, se, sd, sl))
+                    st.strtab.emplace_back(reinterpret_cast<const char*>(sd), sl);
+            } else {
+                if (!skip_field(sp, se, swt)) break;
+            }
+        }
     }
 
     auto latlon_to_double = [&](int64_t raw) -> double {
@@ -390,16 +404,7 @@ OSMData parse_osm_pbf(const std::string& filepath) {
             continue;
         }
         if (block.type != "OSMData") continue;
-        static bool first_data = true;
-        if (first_data) {
-            first_data = false;
-            // Will be filled after parse
-        }
         parse_primitive_block(block.data, state);
-        if (first_data) {
-            // already false, but just in case
-            std::fprintf(stderr, "  first OSMData: strtab=%zu\n", state.strtab.size());
-        }
 
         if (state.nodes_parsed % 10000000 == 0 && state.nodes_parsed > 0) {
             std::fprintf(stderr, "  parsed %lu nodes, %lu ways...\n",
