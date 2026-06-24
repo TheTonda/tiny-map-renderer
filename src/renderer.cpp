@@ -103,15 +103,19 @@ Image Renderer::render(const Viewport& vp) const {
                                     entry.style.color, entry.style.width);
             } else {
                 bool has_casing = entry.style.casing_width > 0;
-                for (size_t i = 0; i + 1 < entry.pixels.size(); ++i) {
-                    int x0 = entry.pixels[i].first, y0 = entry.pixels[i].second;
-                    int x1 = entry.pixels[i+1].first, y1 = entry.pixels[i+1].second;
-                    if (has_casing) {
-                        draw_seg(x0, y0, x1, y1, entry.style.casing_color,
-                                 entry.style.width + entry.style.casing_width);
-                    }
-                    draw_seg(x0, y0, x1, y1, entry.style.color, entry.style.width);
+                // Pass 1: all casing (same color, overlaps seamlessly)
+                if (has_casing) {
+                    int cw_total = entry.style.width + entry.style.casing_width;
+                    for (size_t i = 0; i + 1 < entry.pixels.size(); ++i)
+                        draw_seg(entry.pixels[i].first, entry.pixels[i].second,
+                                 entry.pixels[i+1].first, entry.pixels[i+1].second,
+                                 entry.style.casing_color, cw_total);
                 }
+                // Pass 2: all fill (on top, covers casing overlaps)
+                for (size_t i = 0; i + 1 < entry.pixels.size(); ++i)
+                    draw_seg(entry.pixels[i].first, entry.pixels[i].second,
+                             entry.pixels[i+1].first, entry.pixels[i+1].second,
+                             entry.style.color, entry.style.width);
             }
         }
     }
@@ -232,15 +236,19 @@ Image render_v2(const RenderData& rd, double center_lat, double center_lon,
                                         rw.style.color, rw.style.width);
                 } else {
                     bool has_casing = rw.style.casing_width > 0;
-                    for (size_t i = 0; i + 1 < pixels.size(); ++i) {
-                        int x0 = pixels[i].first, y0 = pixels[i].second;
-                        int x1 = pixels[i+1].first, y1 = pixels[i+1].second;
-                        if (has_casing) {
-                            draw_seg(x0, y0, x1, y1, rw.style.casing_color,
-                                     rw.style.width + rw.style.casing_width);
-                        }
-                        draw_seg(x0, y0, x1, y1, rw.style.color, rw.style.width);
+                    // Pass 1: all casing (same color, overlaps seamlessly)
+                    if (has_casing) {
+                        int cw_total = rw.style.width + rw.style.casing_width;
+                        for (size_t i = 0; i + 1 < pixels.size(); ++i)
+                            draw_seg(pixels[i].first, pixels[i].second,
+                                     pixels[i+1].first, pixels[i+1].second,
+                                     rw.style.casing_color, cw_total);
                     }
+                    // Pass 2: all fill (covers casing overlaps — no visible seams)
+                    for (size_t i = 0; i + 1 < pixels.size(); ++i)
+                        draw_seg(pixels[i].first, pixels[i].second,
+                                 pixels[i+1].first, pixels[i+1].second,
+                                 rw.style.color, rw.style.width);
                 }
             }
         }
